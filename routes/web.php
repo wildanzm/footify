@@ -9,16 +9,12 @@ Route::get('/', function () {
 
 Route::redirect('/', '/login');
 
-Route::view('dashboard', 'dashboard')
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
-
 Route::middleware(['auth'])->group(function () {
-    Route::redirect('settings', 'settings/profile');
-
-    Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
-    Volt::route('settings/password', 'settings.password')->name('settings.password');
-    Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+    Volt::route('screening', 'admin.screening')->name('screenings');
+    Volt::route('history', 'admin.report')->name('reports');
+    Volt::route('profile', 'admin.profile')->name('profile');
+    Volt::route('/screening/result/{screening}', 'admin.result')->name('screening.result');
 });
+
 
 require __DIR__ . '/auth.php';

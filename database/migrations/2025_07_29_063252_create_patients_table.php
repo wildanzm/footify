@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->date('date_of_birth');
+            $table->tinyInteger('age');
             $table->enum('gender', ['Laki-laki', 'Perempuan']);
             $table->enum('last_education', [
                 'Tidak Sekolah',

@@ -12,7 +12,6 @@ use Livewire\Attributes\Title;
 use Livewire\Attributes\Validate;
 use Livewire\Volt\Component;
 
-// Pastikan layout ini menunjuk ke file yang benar
 new #[Layout('components.layouts.auth')] class extends Component {
     #[Validate('required|string|email')]
     #[Title('Login')]
@@ -35,6 +34,9 @@ new #[Layout('components.layouts.auth')] class extends Component {
         if (!Auth::attempt(['email' => $this->email, 'password' => $this->password], $this->remember)) {
             RateLimiter::hit($this->throttleKey());
 
+            // Dispatch event untuk SweetAlert error
+            $this->dispatch('login-failed');
+            
             throw ValidationException::withMessages([
                 'email' => __('auth.failed'),
             ]);
@@ -43,7 +45,10 @@ new #[Layout('components.layouts.auth')] class extends Component {
         RateLimiter::clear($this->throttleKey());
         Session::regenerate();
 
-        $this->redirectIntended(default: route('dashboard', absolute: false), navigate: true);
+        // Dispatch event untuk SweetAlert success
+        $this->dispatch('login-success');
+
+        $this->redirectIntended(default: route('profile', absolute: false), navigate: true);
     }
 
     /**
@@ -58,6 +63,9 @@ new #[Layout('components.layouts.auth')] class extends Component {
         event(new Lockout(request()));
 
         $seconds = RateLimiter::availableIn($this->throttleKey());
+
+        // Dispatch event untuk SweetAlert rate limit
+        $this->dispatch('login-rate-limited', ['seconds' => $seconds]);
 
         throw ValidationException::withMessages([
             'email' => __('auth.throttle', [
@@ -128,10 +136,48 @@ new #[Layout('components.layouts.auth')] class extends Component {
         </div>
 
         <div class="mt-2">
-            <button type="submit"
-                class="w-full text-white bg-primary hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200">
-                Log In
+            <button type="submit" wire:loading.attr="disabled"
+                class="w-full text-white bg-primary hover:bg-teal-700 focus:ring-4 focus:outline-none focus:ring-teal-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center transition-colors duration-200 disabled:opacity-50">
+                <span wire:loading.remove>Masuk</span>
+                <span wire:loading>Memproses...</span>
             </button>
         </div>
     </form>
 </div>
+
+<script>
+    // SweetAlert untuk login berhasil
+    document.addEventListener('livewire:init', () => {
+        Livewire.on('login-success', () => {
+            Swal.fire({
+                title: 'Login Berhasil!',
+                text: 'Selamat datang kembali! Anda akan diarahkan ke halaman utama.',
+                icon: 'success',
+                timer: 2000,
+                showConfirmButton: false,
+                confirmButtonColor: '#058a84'
+            });
+        });
+
+        Livewire.on('login-failed', () => {
+            Swal.fire({
+                title: 'Login Gagal!',
+                text: 'Email atau password yang Anda masukkan salah. Silakan coba lagi.',
+                icon: 'error',
+                confirmButtonText: 'Coba Lagi',
+                confirmButtonColor: '#058a84'
+            });
+        });
+
+        Livewire.on('login-rate-limited', (event) => {
+            const minutes = Math.ceil(event.seconds / 60);
+            Swal.fire({
+                title: 'Terlalu Banyak Percobaan!',
+                text: `Anda telah melakukan terlalu banyak percobaan login. Silakan coba lagi dalam ${minutes} menit.`,
+                icon: 'warning',
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#058a84'
+            });
+        });
+    });
+</script>
