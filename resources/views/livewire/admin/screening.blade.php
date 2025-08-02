@@ -101,6 +101,25 @@ new #[Layout('components.layouts.app', ['title' => 'Skrining'])] #[Title('Skrini
     public string $notes = '';
 
     /**
+     * Automatically calculate age when date of birth is updated
+     */
+    public function updatedPatientDob()
+    {
+        if (!empty($this->patient_dob)) {
+            try {
+                $dob = new \DateTime($this->patient_dob);
+                $today = new \DateTime();
+                $age = $today->diff($dob)->y;
+                $this->age = (string)$age;
+            } catch (\Exception $e) {
+                $this->age = '';
+            }
+        } else {
+            $this->age = '';
+        }
+    }
+
+    /**
      * Validate specific step of the screening process
      *
      * @param string $step The step identifier to validate
@@ -126,9 +145,6 @@ new #[Layout('components.layouts.app', ['title' => 'Skrining'])] #[Title('Skrini
                         'patient_dob.required' => 'Tanggal lahir wajib diisi.',
                         'patient_dob.date' => 'Format tanggal lahir tidak valid.',
                         'age.required' => 'Usia pasien wajib diisi.',
-                        'age.integer' => 'Usia pasien harus berupa angka.',
-                        'age.min' => 'Usia pasien minimal 1 tahun.',
-                        'age.max' => 'Usia pasien maksimal 150 tahun.',
                         'gender.required' => 'Jenis kelamin wajib dipilih.',
                         'gender.in' => 'Jenis kelamin yang dipilih tidak valid.',
                         'blood_sugar_type.required' => 'Jenis pemeriksaan gula darah wajib dipilih.',
@@ -593,10 +609,10 @@ $watch('isTabPadCompleted', value => updateProgress());">
                             <div>
                                 <label for="age" class="block mb-2 text-sm font-medium text-gray-900">Usia
                                     (Tahun)</label>
-                                <input wire:model.lazy="age" type="number" id="age" min="1"
-                                    max="150"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5"
-                                    placeholder="Contoh: 45">
+                                <input wire:model="age" type="number" id="age" min="1"
+                                    max="150" disabled readonly
+                                    class="bg-gray-100 border border-gray-300 text-gray-500 text-sm rounded-lg cursor-not-allowed block w-full p-2.5"
+                                    placeholder="Diisi Otomatis">
                                 <x-input-error :messages="$errors->get('age')" class="mt-2" />
                             </div>
 
