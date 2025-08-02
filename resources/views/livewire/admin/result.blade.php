@@ -9,6 +9,8 @@ new #[Layout('components.layouts.app', ['title' => 'Hasil Skrining'])] #[Title('
     public Screening $screening;
     public $recommendations = [];
     public $editMode = false;
+    public $notesEditMode = false;
+    public $notes = '';
 
     // Recommendation list based on risk level
     public $recommendationsByRisk = [
@@ -26,6 +28,7 @@ new #[Layout('components.layouts.app', ['title' => 'Hasil Skrining'])] #[Title('
     {
         $this->screening = $screening;
         $this->recommendations = $screening->recommendation ?? [];
+        $this->notes = $screening->notes ?? '';
     }
 
     /**
@@ -34,6 +37,19 @@ new #[Layout('components.layouts.app', ['title' => 'Hasil Skrining'])] #[Title('
     public function toggleEditMode()
     {
         $this->editMode = !$this->editMode;
+    }
+
+    /**
+     * Toggle edit mode for notes
+     */
+    public function toggleNotesEditMode()
+    {
+        $this->notesEditMode = !$this->notesEditMode;
+        
+        // Reset notes to original value if canceling
+        if (!$this->notesEditMode) {
+            $this->notes = $this->screening->notes ?? '';
+        }
     }
 
     /**
@@ -49,6 +65,21 @@ new #[Layout('components.layouts.app', ['title' => 'Hasil Skrining'])] #[Title('
 
         // Dispatch event for SweetAlert notification
         $this->dispatch('recommendations-updated', ['status' => 'success']);
+    }
+
+    /**
+     * Update notes and dispatch success event
+     */
+    public function updateNotes()
+    {
+        $this->screening->update([
+            'notes' => $this->notes,
+        ]);
+
+        $this->notesEditMode = false;
+
+        // Dispatch event for SweetAlert notification
+        $this->dispatch('notes-updated', ['status' => 'success']);
     }
 
     /**
@@ -182,6 +213,79 @@ new #[Layout('components.layouts.app', ['title' => 'Hasil Skrining'])] #[Title('
                     @endif
                 @endif
             </div>
+
+            {{-- 4. Clinical Notes Section --}}
+            <div class="bg-white p-6 rounded-2xl shadow-md border border-slate-200">
+                <div class="flex justify-between items-center mb-4 pb-4 border-b border-slate-200">
+                    <h2 class="text-xl font-semibold text-primary">Catatan Klinis</h2>
+                    <button wire:click="toggleNotesEditMode"
+                        class="px-4 py-2 text-sm font-medium rounded-lg {{ $notesEditMode ? 'bg-gray-200 text-gray-700' : 'bg-primary text-white' }} hover:opacity-80">
+                        {{ $notesEditMode ? 'Batal' : 'Edit Catatan' }}
+                    </button>
+                </div>
+
+                @if ($notesEditMode)
+                    {{-- Edit Mode with Textarea --}}
+                    <form wire:submit.prevent="updateNotes" class="space-y-4">
+                        <div>
+                            <label for="notes" class="block text-sm font-medium text-slate-700 mb-2">
+                                Catatan Klinis
+                            </label>
+                            <textarea wire:model="notes" id="notes" rows="6"
+                                class="w-full px-3 text-gray-900 py-2 border border-gray-300 rounded-lg focus:ring-primary focus:border-primary resize-y"
+                                placeholder="Masukkan catatan klinis, observasi tambahan, atau rekomendasi khusus untuk pasien ini..."></textarea>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Catatan ini akan membantu dalam follow-up dan evaluasi selanjutnya.
+                            </p>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" wire:click="toggleNotesEditMode"
+                                class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">
+                                Batal
+                            </button>
+                            <button type="submit" wire:loading.attr="disabled"
+                                class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-teal-700 disabled:opacity-50">
+                                <span wire:loading.remove>Simpan Catatan</span>
+                                <span wire:loading>Menyimpan...</span>
+                            </button>
+                        </div>
+                    </form>
+                @else
+                    {{-- View Mode with Notes Display --}}
+                    @if (!empty(trim($notes)))
+                        <div class="prose prose-sm max-w-none">
+                            <div class="bg-slate-50 p-4 rounded-lg border-l-4 border-primary">
+                                <div class="flex items-start space-x-3">
+                                    <div class="mt-1">
+                                        <svg class="w-5 h-5 text-primary" fill="currentColor" viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <p class="text-slate-700 leading-relaxed whitespace-pre-wrap">{{ $notes }}</p>
+                                        <p class="text-xs text-slate-500 mt-2">
+                                            Terakhir diupdate: {{ $screening->updated_at->locale('id')->translatedFormat('d F Y H:i') }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="text-center py-8">
+                            <div class="mx-auto w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mb-4">
+                                <svg class="w-6 h-6 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-slate-500 mb-4">Belum ada catatan klinis yang ditambahkan.</p>
+                            <button wire:click="toggleNotesEditMode"
+                                class="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-teal-700">
+                                Tambah Catatan
+                            </button>
+                        </div>
+                    @endif
+                @endif
+            </div>
         </div>
 
         {{-- Additional Information Column --}}
@@ -227,25 +331,45 @@ new #[Layout('components.layouts.app', ['title' => 'Hasil Skrining'])] #[Title('
     <div class="flex justify-end space-x-4 pt-4 border-t">
         <a href="{{ route('reports') }}" wire:navigate
             class="text-slate-700 bg-slate-200 hover:bg-slate-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Lihat
-            Semua Laporan</a>
-        <a href="{{ route('screenings') }}" wire:navigate
-            class="text-white bg-primary hover:bg-teal-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center">Mulai
-            Skrining Baru</a>
+            Semua Histori</a>
+        <a href="{{ route('screening.pdf', $screening) }}" target="_blank"
+            class="text-white bg-primary hover:bg-teal-700 font-medium rounded-lg text-sm px-5 py-2.5 text-center inline-flex items-center">
+            <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+            Download Hasil Skrining
+        </a>
     </div>
 </div>
 
 <!-- JavaScript Section -->
 <script>
     /**
-     * SweetAlert notification for recommendation updates
+     * SweetAlert notifications for updates
      * Listens for Livewire events and displays success notifications
      */
     document.addEventListener('livewire:init', () => {
+        // Handle recommendations update notifications
         Livewire.on('recommendations-updated', (event) => {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     title: 'Berhasil!',
                     text: 'Rekomendasi tindakan telah berhasil diperbarui.',
+                    icon: 'success',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: '#058a84',
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+            }
+        });
+
+        // Handle notes update notifications
+        Livewire.on('notes-updated', (event) => {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: 'Catatan klinis telah berhasil disimpan.',
                     icon: 'success',
                     confirmButtonText: 'OK',
                     confirmButtonColor: '#058a84',

@@ -39,13 +39,34 @@ new #[Layout('components.layouts.app', ['title' => 'Histori Skrining'])] #[Title
      */
     public function deleteScreening($screeningId)
     {
-        $screening = Screening::findOrFail($screeningId);
+        $screening = Screening::with('patient')->findOrFail($screeningId);
+        $patient = $screening->patient;
+        
+        // Delete the screening first
         $screening->delete();
+        
+        // Delete the associated patient if they exist
+        if ($patient) {
+            $patient->delete();
+        }
 
-        session()->flash('message', 'Data skrining berhasil dihapus.');
+        session()->flash('message', 'Data skrining dan pasien berhasil dihapus.');
 
         // Emit browser event for SweetAlert success notification
         $this->dispatch('screening-deleted');
+    }
+
+    /**
+     * Download PDF report for specific screening
+     * Redirects to PDF download route
+     */
+    public function downloadPdf($screeningId)
+    {
+        // Validate that screening exists
+        $screening = Screening::findOrFail($screeningId);
+        
+        // Redirect to PDF download route
+        return redirect()->route('screening.pdf', $screening);
     }
 
     /**
@@ -105,7 +126,7 @@ new #[Layout('components.layouts.app', ['title' => 'Histori Skrining'])] #[Title
                                 {{ $screenings->firstItem() + $index }}</span>
                             <div class="flex items-center space-x-2">
                                 <!-- Mobile Action Buttons -->
-                                <button onclick="showPdfAlert()"
+                                <button onclick="downloadPdf({{ $screening->id }})"
                                     class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                     title="Unduh PDF">
                                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"
@@ -154,15 +175,11 @@ new #[Layout('components.layouts.app', ['title' => 'Histori Skrining'])] #[Title
                             <p class="font-semibold text-gray-900">{{ $screening->patient->name }}</p>
                             <p class="text-sm text-gray-500">
                                 {{ $screening->patient->gender === 'Male' ? 'Laki-laki' : ($screening->patient->gender === 'Female' ? 'Perempuan' : $screening->patient->gender) }}
-                                •
-                                {{ $screening->patient->age }} tahun</p>
                         </div>
                         <div class="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <span class="text-gray-500">Tanggal Lahir:</span>
-                                <p class="font-medium text-gray-900">
-                                    {{ \Carbon\Carbon::parse($screening->patient->date_of_birth)->locale('id')->isoFormat('D MMMM Y') }}
-                                </p>
+                                <span class="text-gray-500">Usia:</span>
+                                <p class="font-medium text-gray-900">{{ $screening->patient->age }} tahun</p>
                             </div>
                             <div>
                                 <span class="text-gray-500">Jenis Tes:</span>
@@ -308,7 +325,7 @@ new #[Layout('components.layouts.app', ['title' => 'Histori Skrining'])] #[Title
                                 <!-- Desktop Action Buttons -->
                                 <div class="flex items-center justify-center space-x-2">
                                     <!-- PDF Download Button -->
-                                    <button onclick="showPdfAlert()"
+                                    <button onclick="downloadPdf({{ $screening->id }})"
                                         class="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
                                         title="Unduh PDF">
                                         <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none"
@@ -394,7 +411,16 @@ new #[Layout('components.layouts.app', ['title' => 'Histori Skrining'])] #[Title
 <!-- JavaScript Section -->
 <script>
     /**
-     * Show SweetAlert for PDF download feature
+     * Download PDF report for specific screening
+     * @param {number} screeningId - The ID of the screening to download
+     */
+    function downloadPdf(screeningId) {
+        // Call Livewire method to download PDF
+        @this.call('downloadPdf', screeningId);
+    }
+
+    /**
+     * Show SweetAlert for PDF download feature (fallback function)
      * Currently displays info about feature being under development
      */
     function showPdfAlert() {
