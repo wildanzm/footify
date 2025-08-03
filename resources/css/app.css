@@ -101,3 +101,111 @@ select:focus[data-flux-control] {
 .scrollbar-hide::-webkit-scrollbar {
     display: none; /* Chrome, Safari and Opera */
 }
+
+/* Hide native calendar icons in all browsers */
+input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+
+input[type="date"]::-moz-calendar-picker-indicator {
+    display: none;
+}
+
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-outer-spin-button {
+    display: none;
+    -webkit-appearance: none;
+}
+
+/* Ensure consistent appearance across browsers */
+input[type="date"] {
+    -webkit-appearance: none;
+    -moz-appearance: textfield;
+    appearance: none;
+}
+
+/* Custom styles for datepicker */
+.custom-datepicker {
+    font-family: "Poppins", sans-serif !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15) !important;
+    border-radius: 12px !important;
+    border: 1px solid #e5e7eb !important;
+}
+
+/* Year/Month navigation styling */
+.custom-datepicker .datepicker-switch {
+    background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
+    color: white !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    transition: all 0.3s ease !important;
+}
+
+.custom-datepicker .datepicker-switch:hover {
+    background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* Navigation arrows */
+.custom-datepicker .prev-btn,
+.custom-datepicker .next-btn {
+    color: #14b8a6 !important;
+    font-size: 18px !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease !important;
+    border-radius: 50% !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+.custom-datepicker .prev-btn:hover,
+.custom-datepicker .next-btn:hover {
+    background-color: #f0fdfa !important;
+    color: #0d9488 !important;
+}
+
+/* Today button styling */
+.custom-datepicker .today-btn {
+    background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Clear button styling */
+.custom-datepicker .clear-btn {
+    background: #ef4444 !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 8px 16px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+}
+
+/* Active date styling */
+.custom-datepicker .active {
+    background: linear-gradient(135deg, #14b8a6, #0d9488) !important;
+    color: white !important;
+    border-radius: 8px !important;
+}
+
+/* Format hint in placeholder */
+#patient_dob::placeholder {
+    color: #9ca3af !important;
+    font-style: italic !important;
+}
+
+/* Focus state for better UX */
+#patient_dob:focus {
+    border-color: #14b8a6 !important;
+    box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.1) !important;
+}

@@ -24,7 +24,7 @@ new #[Layout('components.layouts.app', ['title' => 'Skrining'])] #[Title('Skrini
     public string $patient_name = '';
     #[Validate('required|date')]
     public string $patient_dob = '';
-    #[Validate('required|integer|min:1|max:150')]
+    public string $patient_dob_display = '';
     public string $age = '';
     #[Validate('required|in:Laki-laki,Perempuan')]
     public string $gender = '';
@@ -110,12 +110,25 @@ new #[Layout('components.layouts.app', ['title' => 'Skrining'])] #[Title('Skrini
                 $dob = new \DateTime($this->patient_dob);
                 $today = new \DateTime();
                 $age = $today->diff($dob)->y;
-                $this->age = (string)$age;
+                $this->age = (string) $age;
+                $this->patient_dob_display = $dob->format('d-m-Y');
             } catch (\Exception $e) {
                 $this->age = '';
+                $this->patient_dob_display = '';
             }
         } else {
             $this->age = '';
+            $this->patient_dob_display = '';
+        }
+    }
+
+    /**
+     * Component mount to initialize display format if data exists
+     */
+    public function mount()
+    {
+        if (!empty($this->patient_dob)) {
+            $this->updatedPatientDob();
         }
     }
 
@@ -133,7 +146,6 @@ new #[Layout('components.layouts.app', ['title' => 'Skrining'])] #[Title('Skrini
                     [
                         'patient_name' => 'required|string|max:255',
                         'patient_dob' => 'required|date',
-                        'age' => 'required|integer|min:1|max:150',
                         'gender' => 'required|in:Laki-laki,Perempuan',
                         'blood_sugar_type' => 'required|in:gds,gdp,hba1c',
                         'blood_sugar_value' => 'required|numeric',
@@ -144,7 +156,6 @@ new #[Layout('components.layouts.app', ['title' => 'Skrining'])] #[Title('Skrini
                         'patient_name.max' => 'Nama lengkap pasien tidak boleh lebih dari 255 karakter.',
                         'patient_dob.required' => 'Tanggal lahir wajib diisi.',
                         'patient_dob.date' => 'Format tanggal lahir tidak valid.',
-                        'age.required' => 'Usia pasien wajib diisi.',
                         'gender.required' => 'Jenis kelamin wajib dipilih.',
                         'gender.in' => 'Jenis kelamin yang dipilih tidak valid.',
                         'blood_sugar_type.required' => 'Jenis pemeriksaan gula darah wajib dipilih.',
@@ -324,7 +335,6 @@ new #[Layout('components.layouts.app', ['title' => 'Skrining'])] #[Title('Skrini
         ]);
 
         session()->flash('status', 'Data skrining untuk pasien ' . $patient->name . ' berhasil disimpan.');
-        return $this->redirect(route('screening.result', ['screening' => $screening->id]), navigate: true);
     }
 
     /**
@@ -600,25 +610,28 @@ $watch('isTabPadCompleted', value => updateProgress());">
                                 <x-input-error :messages="$errors->get('patient_name')" class="mt-2" />
                             </div>
                             <div>
-                                <label for="patient_dob" class="block mb-2 text-sm font-medium text-gray-900">Tanggal
-                                    Lahir</label>
-                                <input wire:model="patient_dob" type="date" id="patient_dob"
-                                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full p-2.5">
+                                <label for="patient_dob" class="block mb-2 text-sm font-medium text-gray-900">
+                                    Tanggal Lahir
+                                    <span x-show="$wire.age"
+                                        class="ml-2 px-2 py-1 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                                        Usia: <span x-text="$wire.age"></span> tahun
+                                    </span>
+                                </label>
+                                <div class="relative">
+                                    <input wire:model="patient_dob_display" 
+                                           type="text" 
+                                           id="patient_dob"
+                                           class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary focus:border-primary block w-full pr-10 p-2.5" 
+                                           placeholder="Contoh: 15-08-1990"
+                                           readonly>
+                                    <div class="absolute inset-y-0 end-0 flex items-center pe-3 pointer-events-none">
+                                        <svg class="w-4 h-4 text-gray-500" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
+                                            <path d="M20 4a2 2 0 0 0-2-2h-2V1a1 1 0 0 0-2 0v1h-3V1a1 1 0 0 0-2 0v1H6V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v2h20V4ZM0 18a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8H0v10Zm5-8h10a1 1 0 0 1 0 2H5a1 1 0 0 1 0-2Z"/>
+                                        </svg>
+                                    </div>
+                                </div>
                                 <x-input-error :messages="$errors->get('patient_dob')" class="mt-2" />
                             </div>
-                            <div>
-                                <label for="age" class="block mb-2 text-sm font-medium text-gray-900">Usia
-                                    (Tahun)</label>
-                                <input wire:model="age" type="number" id="age" min="1"
-                                    max="150" disabled readonly
-                                    class="bg-gray-100 border border-gray-300 text-gray-500 text-sm rounded-lg cursor-not-allowed block w-full p-2.5"
-                                    placeholder="Diisi Otomatis">
-                                <x-input-error :messages="$errors->get('age')" class="mt-2" />
-                            </div>
-
-                        </div>
-                        {{-- Right Column --}}
-                        <div class="space-y-5">
                             <div>
                                 <label for="gender" class="block mb-2 text-sm font-medium text-gray-900">Jenis
                                     Kelamin</label>
@@ -630,6 +643,9 @@ $watch('isTabPadCompleted', value => updateProgress());">
                                 </select>
                                 <x-input-error :messages="$errors->get('gender')" class="mt-2" />
                             </div>
+                        </div>
+                        {{-- Right Column --}}
+                        <div class="space-y-5">
                             <div>
                                 <label for="last_education"
                                     class="block mb-2 text-sm font-medium text-gray-900">Pendidikan Terakhir</label>
@@ -1466,7 +1482,7 @@ $watch('isTabPadCompleted', value => updateProgress());">
                                             id="footwear-2" name="footwear-score" type="radio"
                                             class="w-4 h-4 text-primary bg-gray-100 border-gray-300 rounded focus:ring-primary focus:ring-2"><label
                                             for="footwear-2"
-                                            class="ms-2 text-sm font-medium text-gray-900">Menyebabkan trauma</glabel>
+                                            class="ms-2 text-sm font-medium text-gray-900">Menyebabkan trauma</label>
                                     </div>
                                 </div>
                                 <x-input-error :messages="$errors->get('footwear_score')" class="mt-2" />
@@ -1489,17 +1505,173 @@ $watch('isTabPadCompleted', value => updateProgress());">
 </div>
 
 <script>
-    document.addEventListener('livewire:init', () => {
-        Livewire.on('screening-saved', (event) => {
+    // Function to initialize datepicker
+    function initializeDatepicker() {
+        // Wait for Flowbite to be available
+        if (typeof Datepicker === 'undefined') {
+            setTimeout(initializeDatepicker, 500);
+            return;
+        }
+
+        const datepickerEl = document.getElementById('patient_dob');
+        if (!datepickerEl) {
+            return;
+        }
+
+        if (datepickerEl.hasAttribute('data-datepicker-initialized')) {
+            return;
+        }
+
+        try {
+            datepickerEl.setAttribute('data-datepicker-initialized', 'true');
+            
+            const datepicker = new Datepicker(datepickerEl, {
+                format: 'dd-mm-yyyy',
+                autohide: true,
+                maxDate: new Date(),
+                minDate: new Date('1900-01-01'),
+                todayBtn: true,
+                clearBtn: true,
+                todayBtnText: 'Hari ini',
+                clearBtnText: 'Hapus',
+                title: 'Pilih Tanggal Lahir',
+                language: 'id',
+                showOnFocus: true,
+                showOnClick: true,
+                orientation: 'bottom auto',
+                beforeShowYear: function(year) {
+                    const currentYear = new Date().getFullYear();
+                    return year >= 1900 && year <= currentYear;
+                },
+                disableTouchKeyboard: false,
+                startView: 2,
+                minViewMode: 0
+            });
+
+            // Listen for date selection to trigger Livewire update
+            datepickerEl.addEventListener('changeDate', function(e) {
+                const selectedDate = e.detail.date;
+                if (selectedDate) {
+                    const year = selectedDate.getFullYear();
+                    const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+                    const day = String(selectedDate.getDate()).padStart(2, '0');
+                    
+                    const displayFormat = `${day}-${month}-${year}`;
+                    const livewireFormat = `${year}-${month}-${day}`;
+                    
+                    // Find Livewire component
+                    const wireElement = datepickerEl.closest('[wire\\:id]');
+                    if (wireElement && window.Livewire) {
+                        const livewireComponent = window.Livewire.find(wireElement.getAttribute('wire:id'));
+                        if (livewireComponent) {
+                            livewireComponent.set('patient_dob', livewireFormat);
+                            livewireComponent.set('patient_dob_display', displayFormat);
+                        } 
+                    } 
+                }
+            });
+
+            // Add custom styling for better year/month navigation
+            datepickerEl.addEventListener('show', function() {
+                setTimeout(() => {
+                    const datepicker = document.querySelector('.datepicker');
+                    if (datepicker) {
+                        datepicker.classList.add('custom-datepicker');
+                        
+                        const switchBtn = datepicker.querySelector('.datepicker-switch');
+                        if (switchBtn) {
+                            switchBtn.style.cursor = 'pointer';
+                            switchBtn.title = 'Klik untuk memilih tahun/bulan';
+                        }
+                    }
+                }, 10);
+            });
+
+        } catch (error) {
+            datepickerEl.removeAttribute('data-datepicker-initialized');
+        }
+    }
+
+    // Function to register SweetAlert listener
+    function registerSweetAlertListener() {
+        // Wait for Livewire to be available
+        if (typeof window.Livewire === 'undefined') {
+            setTimeout(registerSweetAlertListener, 500);
+            return;
+        }
+
+        // Check if SweetAlert is available
+        if (typeof Swal === 'undefined') {
+            return;
+        }
+
+        try {
+            // Remove previous listener to avoid duplicates
+            window.Livewire.off('screening-saved');
+        } catch (e) {
+            // No previous listener to remove
+        }
+        
+        // Register new listener
+        window.Livewire.on('screening-saved', (event) => {
             Swal.fire({
                 icon: 'success',
                 title: 'Berhasil!',
-                text: `Data skrining berhasil disimpan.`,
+                text: 'Data skrining berhasil disimpan.',
                 confirmButtonText: 'Lihat Hasil',
                 confirmButtonColor: '#058a84',
                 showCancelButton: false,
                 allowOutsideClick: false
-            })
+            }).then((result) => {
+                if (result.isConfirmed && event[0] && event[0].screeningId) {
+                    window.location.href = `/screening/result/${event[0].screeningId}`;
+                }
+            }).catch((error) => {
+                // Fallback navigation
+                if (event[0] && event[0].screeningId) {
+                    window.location.href = `/screening/result/${event[0].screeningId}`;
+                }
+            });
         });
+    }
+
+    // Function to initialize all components
+    function initializeComponents() {
+        initializeDatepicker();
+        registerSweetAlertListener();
+    }
+
+    // Wait for DOM to be ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeComponents();
     });
+
+    // Initialize on Livewire init
+    document.addEventListener('livewire:init', () => {
+        initializeComponents();
+    });
+
+    // Re-initialize on Livewire navigation (SPA)
+    document.addEventListener('livewire:navigated', () => {
+        setTimeout(() => {
+            initializeComponents();
+        }, 100);
+    });
+
+    // Re-initialize when component is updated
+    document.addEventListener('livewire:updated', () => {
+        setTimeout(() => {
+            initializeComponents();
+        }, 100);
+    });
+
+    // Additional event for when Livewire loads
+    document.addEventListener('livewire:load', () => {
+        initializeComponents();
+    });
+
+    // Fallback initialization with delay
+    setTimeout(() => {
+        initializeComponents();
+    }, 1000);
 </script>

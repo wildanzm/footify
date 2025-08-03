@@ -345,38 +345,97 @@ new #[Layout('components.layouts.app', ['title' => 'Hasil Skrining'])] #[Title('
 <!-- JavaScript Section -->
 <script>
     /**
-     * SweetAlert notifications for updates
-     * Listens for Livewire events and displays success notifications
+     * Function to register SweetAlert listeners for result page
      */
-    document.addEventListener('livewire:init', () => {
-        // Handle recommendations update notifications
-        Livewire.on('recommendations-updated', (event) => {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Berhasil!',
-                    text: 'Rekomendasi tindakan telah berhasil diperbarui.',
-                    icon: 'success',
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#058a84',
-                    timer: 3000,
-                    timerProgressBar: true
-                });
-            }
+    function registerSweetAlertListeners() {
+        // Wait for Livewire to be available
+        if (typeof window.Livewire === 'undefined') {
+            setTimeout(registerSweetAlertListeners, 500);
+            return;
+        }
+
+        // Check if SweetAlert is available
+        if (typeof Swal === 'undefined') {
+            return;
+        }
+
+        try {
+            // Remove previous listeners to avoid duplicates
+            window.Livewire.off('recommendations-updated');
+            window.Livewire.off('notes-updated');
+        } catch (e) {
+            // No previous listeners to remove
+        }
+        
+        // Register recommendations update listener
+        window.Livewire.on('recommendations-updated', (event) => {
+            Swal.fire({
+                title: 'Berhasil!',
+                text: 'Rekomendasi tindakan telah berhasil diperbarui.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#058a84',
+                timer: 3000,
+                timerProgressBar: true
+            });
         });
 
-        // Handle notes update notifications
-        Livewire.on('notes-updated', (event) => {
-            if (typeof Swal !== 'undefined') {
-                Swal.fire({
-                    title: 'Berhasil!',
-                    text: 'Catatan klinis telah berhasil disimpan.',
-                    icon: 'success',
-                    confirmButtonText: 'OK',
-                    confirmButtonColor: '#058a84',
-                    timer: 3000,
-                    timerProgressBar: true
-                });
-            }
+        // Register notes update listener
+        window.Livewire.on('notes-updated', (event) => {
+            Swal.fire({
+                title: 'Berhasil!',
+                text: 'Catatan klinis telah berhasil disimpan.',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                confirmButtonColor: '#058a84',
+                timer: 3000,
+                timerProgressBar: true
+            });
         });
+    }
+
+    /**
+     * Function to initialize all components
+     */
+    function initializeComponents() {
+        registerSweetAlertListeners();
+    }
+
+    /**
+     * Initialize on DOM ready
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeComponents();
     });
+
+    /**
+     * Initialize on Livewire init
+     */
+    document.addEventListener('livewire:init', () => {
+        initializeComponents();
+    });
+
+    // Re-initialize on Livewire navigation (SPA)
+    document.addEventListener('livewire:navigated', () => {
+        setTimeout(() => {
+            initializeComponents();
+        }, 100);
+    });
+
+    // Re-initialize when component is updated
+    document.addEventListener('livewire:updated', () => {
+        setTimeout(() => {
+            initializeComponents();
+        }, 100);
+    });
+
+    // Additional event for when Livewire loads
+    document.addEventListener('livewire:load', () => {
+        initializeComponents();
+    });
+
+    // Fallback initialization with delay
+    setTimeout(() => {
+        initializeComponents();
+    }, 1000);
 </script>

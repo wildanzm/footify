@@ -455,10 +455,29 @@ new #[Layout('components.layouts.app', ['title' => 'Histori Skrining'])] #[Title
     }
 
     /**
-     * Listen for Livewire events and show appropriate SweetAlert notifications
+     * Function to register SweetAlert listener for screening deletion
      */
-    document.addEventListener('livewire:init', () => {
-        Livewire.on('screening-deleted', () => {
+    function registerSweetAlertListener() {
+        // Wait for Livewire to be available
+        if (typeof window.Livewire === 'undefined') {
+            setTimeout(registerSweetAlertListener, 500);
+            return;
+        }
+
+        // Check if SweetAlert is available
+        if (typeof Swal === 'undefined') {
+            return;
+        }
+
+        try {
+            // Remove previous listener to avoid duplicates
+            window.Livewire.off('screening-deleted');
+        } catch (e) {
+            // No previous listener to remove
+        }
+        
+        // Register new listener
+        window.Livewire.on('screening-deleted', () => {
             Swal.fire({
                 title: 'Berhasil!',
                 text: 'Data skrining telah berhasil dihapus.',
@@ -467,5 +486,47 @@ new #[Layout('components.layouts.app', ['title' => 'Histori Skrining'])] #[Title
                 confirmButtonColor: '#058a84'
             });
         });
+    }
+
+    /**
+     * Function to initialize all components
+     */
+    function initializeComponents() {
+        registerSweetAlertListener();
+    }
+
+    /**
+     * Listen for Livewire events and show appropriate SweetAlert notifications
+     */
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeComponents();
     });
+
+    document.addEventListener('livewire:init', () => {
+        initializeComponents();
+    });
+
+    // Re-initialize on Livewire navigation (SPA)
+    document.addEventListener('livewire:navigated', () => {
+        setTimeout(() => {
+            initializeComponents();
+        }, 100);
+    });
+
+    // Re-initialize when component is updated
+    document.addEventListener('livewire:updated', () => {
+        setTimeout(() => {
+            initializeComponents();
+        }, 100);
+    });
+
+    // Additional event for when Livewire loads
+    document.addEventListener('livewire:load', () => {
+        initializeComponents();
+    });
+
+    // Fallback initialization with delay
+    setTimeout(() => {
+        initializeComponents();
+    }, 1000);
 </script>
