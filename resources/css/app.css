@@ -9,17 +9,14 @@
 @source '../../vendor/livewire/flux-pro/stubs/**/*.blade.php';
 @source '../../vendor/livewire/flux/stubs/**/*.blade.php';
 
-/* Logika @custom-variant dark dan @layer theme .dark telah dihapus */
 
 @theme {
     --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif,
         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
         "Noto Color Emoji";
 
-    /* Warna primer tetap ada */
     --color-primary: #00b9ad;
 
-    /* Variabel warna dasar */
     --color-zinc-50: #fafafa;
     --color-zinc-100: #f5f5f5;
     --color-zinc-200: #e5e5e5;
@@ -47,9 +44,7 @@
     }
 }
 
-/* Animasi gradasi tetap ada */
 @layer utilities {
-    /* Animasi Gradasi (sudah ada) */
     @keyframes gradient-bg {
         0%,
         100% {
